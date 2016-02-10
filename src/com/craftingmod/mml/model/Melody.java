@@ -10,17 +10,31 @@ public class Melody {
     public NoteOn note;
     public Tempo tempo;
     public boolean isNote;
+    public boolean connect;
     public long duration;
     public long eventTime;
-    public Melody(NoteOn noteon,long dura,long time){
+    public Melody(NoteOn noteon,long end){
         note = noteon;
-        duration = dura;
-        eventTime = time;
+        duration = end - noteon.getTick();
+        eventTime = noteon.getTick();
         isNote = true;
+        connect = false;
     }
-    public Melody(Tempo t,long time){
-        eventTime = time;
+    public Melody(NoteOn noteon,long start,long end,boolean conti){
+        this(noteon,start,end);
+        connect = conti;
+    }
+    public Melody(NoteOn noteon,long start,long end){
+        note = noteon;
+        duration = end - start;
+        eventTime = start;
+        isNote = true;
+        connect = false;
+    }
+    public Melody(Tempo t){
         tempo = t;
+        eventTime = t.getTick();
         isNote = false;
+        connect = false;
     }
 }

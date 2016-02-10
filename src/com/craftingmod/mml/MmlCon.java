@@ -1,12 +1,22 @@
 package com.craftingmod.mml;
 
+import com.google.common.collect.Lists;
 import com.leff.midi.MidiFile;
 import com.leff.midi.MidiTrack;
 import com.leff.midi.event.MidiEvent;
 import com.leff.midi.event.NoteOff;
 import com.leff.midi.event.NoteOn;
+import com.leff.midi.event.meta.Tempo;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 
@@ -15,19 +25,20 @@ import java.util.List;
  */
 public class MmlCon  {
     private MidiFile midi;
-    private ArrayList<MidiTrack> tracks;
+    public ArrayList<MidiTrack> tracks;
+
+    private HashMap<Long,Tempo> tempoes;
 
     private Logger Log;
-    private int maxV;
 
     public Boolean upOctave = false;
     public MmlCon(MidiFile file)  {
         midi = file;
-        maxV = 0;
         tracks = new ArrayList<>();
         Log = new Logger(this.getClass());
     }
     public void filterTrack(){
+        scanTempo();
         for(int i=0;i<midi.getTrackCount();i+=1){
             MidiTrack track = midi.getTracks().get(i);
             Iterator<MidiEvent> it = track.getEvents().iterator();
@@ -35,10 +46,6 @@ public class MmlCon  {
             while (it.hasNext()){
                 MidiEvent event = it.next();
                 if(event instanceof NoteOn){
-                    NoteOn note = (NoteOn) event;
-                    if(maxV < note.getVelocity()){
-                        maxV = note.getVelocity();
-                    }
                     isPiano = true;
                 }else if(event instanceof NoteOff){
                     isPiano = true;
@@ -49,10 +56,81 @@ public class MmlCon  {
                 tracks.add(track);
             }
         }
-        Log.d("MaxV: " + maxV);
+    }
+    public void scanTempo(){
+        //HashMap<Long,Tempo> tempo = new HashMap<>();
+        tempoes = new HashMap<>();
+        for(int k=0;k<midi.getTrackCount();k+=1){
+            MidiTrack track = midi.getTracks().get(k);
+            Iterator<MidiEvent> it = track.getEvents().iterator();
+            ArrayList<MidiEvent> events = Lists.newArrayList(track.getEvents().iterator());
+            int lastBPM = -1;
+            boolean tempoExists = false;
+            for(int i=0;i<events.size();i+=1){
+                MidiEvent event = events.get(i);
+                if(event instanceof Tempo){
+                    int bpm =  Math.round(((Tempo) event).getBpm());
+                    // lastBPM/20 -> Ex: 120 -> 6 / 180 -> 9 / 60 -> 3
+                    if(Math.abs(lastBPM - bpm) < (lastBPM/15) && lastBPM != -1){
+                        Log.d("Tempo " + bpm + " removed due to similar tempo.");
+                        events.remove(i);
+                        i -= 1;
+                    }else{
+                        Tempo lpT = (Tempo) event;
+                        tempoes.put(lpT.getTick(),lpT);
+                        Log.d("Tempo: " + bpm);
+                        lastBPM = bpm;
+                        tempoExists = true;
+                    }
+                }
+            }
+            if(tempoExists){
+                break;
+            }
+        }
+    }
+    public void exportAll(File dir, String name){
+        ArrayList<String> out = new ArrayList<>();
+        ArrayList<String> results = new ArrayList<>();
+        ArrayList<Integer> sizes = new ArrayList<>();
+        for (MidiTrack track : tracks) {
+            MmlScan scanner = new MmlScan(track);
+            scanner.putTempoes(tempoes);
+            scanner.scanTracks();
+            ArrayList<String> outs = scanner.getResults();
+            for (int j=0;j<outs.size();j+=1) {
+                String outlp = outs.get(j);
+                results.add(outlp);
+                Log.i("Size: " + scanner.getSizes().get(j));
+                sizes.add(scanner.getSizes().get(j));
+            }
+        }
+        out.add("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
+        out.add("<ms2>");
+        if(results.size() >= 1){
+            out.add("<melody>");
+            out.add("<![CDATA[");
+            out.add(results.get(0));
+            out.add("]]>");
+            out.add("</melody>");
+        }
+        for (int i=1;i<results.size();i+=1) {
+            out.add("<chord index=\"" + i + "\">");
+            out.add("<![CDATA[");
+            out.add(results.get(i));
+            out.add("]]>");
+            out.add("</chord>");
+        }
+        out.add("</ms2>");
+        try{
+            Path expFile = Paths.get(dir.getCanonicalPath() + "/" + name);
+            Files.deleteIfExists(expFile);
+            Files.write(expFile,out,StandardCharsets.UTF_8);
+        }catch (Exception e){
+            e.printStackTrace();
+        }
     }
     public void scan(int channel){
-        new MmlScan(tracks.get(channel),150);
         //MmlScan scanner = new MmlScan(tracks.get(channel));
     }
 }
