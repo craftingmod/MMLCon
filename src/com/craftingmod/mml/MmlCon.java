@@ -126,14 +126,14 @@ public class MmlCon  {
         if(results.size() >= 1){
             out.add("<melody>");
             out.add("<![CDATA[");
-            out.add(results.get(0));
+            out.add("MML@" + results.get(0));
             out.add("]]>");
             out.add("</melody>");
         }
         for (int i=1;i<results.size();i+=1) {
             out.add("<chord index=\"" + i + "\">");
             out.add("<![CDATA[");
-            out.add(results.get(i));
+            out.add("MML@" + results.get(i));
             out.add("]]>");
             out.add("</chord>");
         }

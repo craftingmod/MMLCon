@@ -229,7 +229,7 @@ public class MmlScan extends MmlSplit{
 
         int lastOctave = -3;
         int lastVelo = -3;
-        long lastDuration = 0;
+        long lastDuration = 1;
         ArrayList<String> out = Lists.newArrayList();
         int i = 0;
         for(SimpleMelody melody : aligned){
@@ -258,18 +258,12 @@ public class MmlScan extends MmlSplit{
             if(nextElement != null){
                 Log.d("SimpleDu: " + getSimpleDuration(melody.duration) + " / last: " + lastDuration + " / nextDu: " + nextElement.duration);
             }
+            if(){
 
-            if(getSimpleDuration(melody.duration) != lastDuration){ // 간단하게 나타낸 길이가 최근 길이랑 다르면
-                if(getSingleLength(melody.duration) != null){ // 간단하게 음표를 표시할수 있으면
-                    while(nextMelody != null){
-                        String duS = getSimpleLength(nextElement.duration); // 간단하게 줄인 문자
-                        if(duS != null && duS.equalsIgnoreCase(getSimpleLength(melody.duration))){ // 다음 음의 간단문자랑 일치하면
-                            out.add("L" + duS); // 간단문자 추가
-                            lastDuration = getSimpleDuration(melody.duration);
-                        }
-                        break;
-                    }
-                }
+            }else if(lastDuration != melody.duration){
+
+            }else if(melody.duration > times.get(4)*6){
+
             }
             // 도트 필요 여부
             boolean reqireDot = getSimpleDuration(melody.duration) == lastDuration && melody.duration != lastDuration;
@@ -282,7 +276,7 @@ public class MmlScan extends MmlSplit{
                     continue;
                 }
                 if(append.startsWith("L") && getSimpleLength(lastDuration) != null){
-                    lastDuration = times.get(4)*6;
+                    // lastDuration = times.get(4)*6;
                 }
                 out.add(append);
                 i += 1;
@@ -316,7 +310,7 @@ public class MmlScan extends MmlSplit{
                 continue;
             }
             if(append.startsWith("L")){
-                lastDuration = times.get(4)*6;
+                // lastDuration = times.get(4)*6;
             }
             if(melody.isBridge){
                 append = "&" + append;
@@ -415,24 +409,18 @@ public class MmlScan extends MmlSplit{
             long leftover = du;
             int add4 = 0;
             String[] sts = new String[]{
-                    "1","2.","2","4.","4","8.","8","16.","16","32.","32"
+                    "1.","1","2.","2","4.","4","8.","8","16.","16","32.","32"
             };
             double[] dus = new double[]{
-                    4,3,2,1.5,1,0.75,0.5,0.375,0.25,0.1875,0.125
+                    6,4,3,2,1.5,1,0.75,0.5,0.375,0.25,0.1875,0.125
             };
             while(getSingleLength(leftover) == null){
                 String addS = null;
-                if(leftover > times.get(4)*6){
-                    add4 += 1;
-                    addS = "1.";
-                    leftover = leftover - times.get(4)*6;
-                }else{
-                    for(int i=0;i<dus.length;i+=1){
-                        if(leftover > times.get(4)*dus[i]){
-                            addS = sts[i];
-                            leftover = leftover - (long)(times.get(4)*dus[i]);
-                            break;
-                        }
+                for(int i=0;i<dus.length;i+=1){
+                    if(leftover > times.get(4)*dus[i]){
+                        addS = sts[i];
+                        leftover = leftover - (long)(times.get(4)*dus[i]);
+                        break;
                     }
                 }
                 if(addS == null){
@@ -443,14 +431,6 @@ public class MmlScan extends MmlSplit{
             }
             in.add(note + getSingleLength(leftover));
             String result = "";
-            if(add4 >= 2){
-                if(ino != null){
-                    ino.add("L" + getSingleLength(times.get(4)*6));
-                }else{
-                    result += "L" + getSingleLength(times.get(4)*6);
-                }
-                defaultD = times.get(4)*6;
-            }
             String result_lp;
             String replace_lp;
             if(useB) {
