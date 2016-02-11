@@ -30,6 +30,7 @@ public class MmlScan extends MmlSplit{
      */
 
     public boolean upOctave = false;
+    public boolean reduceV = true;
     public MmlScan(MidiTrack tr){
         super(tr);
     }
@@ -62,35 +63,50 @@ public class MmlScan extends MmlSplit{
         ArrayList<Long> keys = Lists.newArrayList(channel.keySet().iterator()); // eventTime keys
         Collections.sort(keys, sortKeys); // sort
 
+        Iterator<Long> it = channels.get(0).keySet().iterator();
+        while(it.hasNext()){
+            ArrayList<Melody> melodies = Lists.newArrayList(channels.get(0).get(it.next()));
+            for(Melody mld : melodies){
+                if(!mld.isNote){
+                    Log.d("Melodies: " + g.toJson(mld));
+                }
+            }
+        }
+
         ArrayList<Melody> melodies;
         for(int i=0;i<keys.size();i+=1){
             melodies = Lists.newArrayList(channel.get(keys.get(i)));
-            Melody melody = null;
+            Melody melody;
+            Melody m_Tempo = null;
+            Melody m_Listen = null;
             for (Melody lp_mld : melodies) {
                 if (!lp_mld.isNote) {
-                    if (melody == null) {
-                        melody = lp_mld;
-                    }
-                    break;
+                    m_Tempo = lp_mld;
                     //output.add("T" + (int) lp_mld.tempo.getBpm());
                 } else {
-                    melody = lp_mld;
-                    break;
+                    m_Listen = lp_mld;
                 }
             }
-            if(melody == null){
-                Log.d("Empty Position at " + i);
-                continue;
+            if(m_Tempo != null){
+                // There is a tempo
+                melody = m_Tempo;
+            }else{
+                if(m_Listen != null){
+                    melody = m_Listen;
+                }else{
+                    continue;
+                }
             }
             if(melody.eventTime - lastTime > 0){
                 aligned.add(new SimpleMelody(melody.eventTime- lastTime, lastTime));
                 Log.d("Pushed break. " + lastTime + " / " + melody.eventTime);
             }
-            Log.d(new GsonBuilder().create().toJson(melody));
             if(!melody.isNote){
+                Log.d("SELECT TEMPO " + melody.tempo.getBpm() + " AT " + melody.eventTime);
                 aligned.add(new SimpleMelody(melody));
-                Log.d("Pushed note. " + melody.eventTime);
                 lastTime = melody.eventTime;
+                channel.get(keys.get(i)).remove(melody);
+                i -= 1;
                 continue;
             }
             Melody nextMelody = null;
@@ -132,7 +148,7 @@ public class MmlScan extends MmlSplit{
                     }else{
                         melody.duration = reduceDuration(melody.duration,afterDu,timeMin);
                     }
-                    if(melody.duration - origDu > origDu/4){
+                    if(melody.duration - origDu > origDu/4 || melody.duration < 0){
                         long reduceN;
                         if(origDu > times.get(2)){
                             reduceN = times.get(8);
@@ -148,6 +164,7 @@ public class MmlScan extends MmlSplit{
                 }
                 long breaks = totalDu-melody.duration;
                 SimpleMelody sMel = new SimpleMelody(melody);
+                sMel.octave -= 1;
                 if(upOctave){
                     sMel.octave += 1;
                 }
@@ -220,7 +237,6 @@ public class MmlScan extends MmlSplit{
              * Tempo
              */
             if(melody.isTempo){
-                Log.d("Added Tempo in Looper");
                 out.add("T" + (int)Math.floor(melody.bpm));
                 continue;
             }
@@ -286,10 +302,12 @@ public class MmlScan extends MmlSplit{
                 lastOctave = melody.octave;
             }
             //Velocity
-            melody.power = (int)Math.max(0,Math.min(15,divide(melody.power,average)*15));
+            melody.power = Math.max(0,5+Math.min(10,Math.round(divide(melody.power,average)*10)));
             if(lastVelo != melody.power){
                 Log.d("Velocity: " + melody.power);
-                out.add("V" + melody.power);
+                if(!reduceV || Math.abs(lastVelo - melody.power) >= 4){
+                    out.add("V" + melody.power);
+                }
                 lastVelo = melody.power;
             }
             String append = getLoopDuration(melody.duration,melody.getNativeNote(),lastDuration,false,out);
@@ -305,7 +323,6 @@ public class MmlScan extends MmlSplit{
             }
             out.add(append);
 
-            Log.d(getSingleLength(melody.duration));
             i += 1;
         }
         Log.d("Result");
@@ -447,7 +464,6 @@ public class MmlScan extends MmlSplit{
             }
             result += result_lp;
 
-            Log.d("DuLoop: " + result);
             return result;
         }else{
             // don't require loop
@@ -455,7 +471,6 @@ public class MmlScan extends MmlSplit{
             if(getSingleLength(defaultD) != null){
                 out = out.replace(getSingleLength(defaultD),"");
             }
-            Log.d("Du: " + out);
             return out;
         }
     }

@@ -1,6 +1,8 @@
 package com.craftingmod.mml;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Ordering;
+import com.google.common.primitives.Longs;
 import com.leff.midi.MidiFile;
 import com.leff.midi.MidiTrack;
 import com.leff.midi.event.MidiEvent;
@@ -15,10 +17,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 /**
  * Created by superuser on 16/2/5.
@@ -27,7 +26,7 @@ public class MmlCon  {
     private MidiFile midi;
     public ArrayList<MidiTrack> tracks;
 
-    private HashMap<Long,Tempo> tempoes;
+    private ArrayList<Tempo> tempoes;
 
     private Logger Log;
 
@@ -59,7 +58,7 @@ public class MmlCon  {
     }
     public void scanTempo(){
         //HashMap<Long,Tempo> tempo = new HashMap<>();
-        tempoes = new HashMap<>();
+        tempoes = new ArrayList<>();
         for(int k=0;k<midi.getTrackCount();k+=1){
             MidiTrack track = midi.getTracks().get(k);
             Iterator<MidiEvent> it = track.getEvents().iterator();
@@ -77,7 +76,7 @@ public class MmlCon  {
                         i -= 1;
                     }else{
                         Tempo lpT = (Tempo) event;
-                        tempoes.put(lpT.getTick(),lpT);
+                        tempoes.add(lpT);
                         Log.d("Tempo: " + bpm);
                         lastBPM = bpm;
                         tempoExists = true;
@@ -95,15 +94,32 @@ public class MmlCon  {
         ArrayList<Integer> sizes = new ArrayList<>();
         for (MidiTrack track : tracks) {
             MmlScan scanner = new MmlScan(track);
-            scanner.putTempoes(tempoes);
+            scanner.putTempo(tempoes);
             scanner.scanTracks();
             ArrayList<String> outs = scanner.getResults();
             for (int j=0;j<outs.size();j+=1) {
                 String outlp = outs.get(j);
                 results.add(outlp);
-                Log.i("Size: " + scanner.getSizes().get(j));
                 sizes.add(scanner.getSizes().get(j));
             }
+        }
+        Ordering<String> sortKeys = new Ordering<String>() {
+            @Override
+            public int compare(String s, String t1) {
+                if(s.length() > t1.length()){
+                    return 1;
+                }else if(s.length() == t1.length()){
+                    return 0;
+                }else{
+                    return -1;
+                }
+            }
+        };
+        Collections.sort(results, sortKeys); // sort
+        Collections.reverse(results);
+
+        for(int size : sizes){
+            Log.i("Size: " + size);
         }
         out.add("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
         out.add("<ms2>");

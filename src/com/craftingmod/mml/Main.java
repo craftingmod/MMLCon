@@ -15,8 +15,8 @@ import java.util.concurrent.ExecutionException;
 public class Main {
     public static void main(String args[]){
         Logger Log = new Logger(Main.class);
-        File input = new File("/Users/superuser/Documents/MuseScore2/100 - Megalovania.mid");
-        // File input = new File("/Users/superuser/Documents/MuseScore2/098 - Battle Against a True Hero.mid");
+        // File input = new File("/Users/superuser/Documents/MuseScore2/100 - Megalovania.mid");
+         File input = new File("/Users/superuser/Documents/MuseScore2/098 - Battle Against a True Hero.mid");
         // File input = new File("/Users/superuser/Documents/MuseScore2/Undertale Midi File/077 - Asgore.mid");
         // File input = new File("/Users/superuser/Documents/MuseScore2/Undertale Midi File/098 - Battle Against a True Hero.mid");
         try {
