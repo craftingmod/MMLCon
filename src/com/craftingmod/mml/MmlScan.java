@@ -229,7 +229,7 @@ public class MmlScan extends MmlSplit{
 
         int lastOctave = -3;
         int lastVelo = -3;
-        long lastDuration = 1;
+        long lastDuration = -3;
         ArrayList<String> out = Lists.newArrayList();
         int i = 0;
         for(SimpleMelody melody : aligned){
@@ -258,12 +258,21 @@ public class MmlScan extends MmlSplit{
             if(nextElement != null){
                 Log.d("SimpleDu: " + getSimpleDuration(melody.duration) + " / last: " + lastDuration + " / nextDu: " + nextElement.duration);
             }
-            if(){
-
-            }else if(lastDuration != melody.duration){
-
-            }else if(melody.duration > times.get(4)*6){
-
+            if(melody.duration >= times.get(4)*12 && lastDuration != times.get(4)*6){
+                lastDuration = times.get(4)*6;
+                out.add("L1.");
+            }else if(nextElement != null && lastDuration != melody.duration && getSingleLength(melody.duration) != null) {
+                if(nextElement.duration == melody.duration){
+                    // match next melody
+                    lastDuration = melody.duration;
+                    out.add("L" + getSingleLength(lastDuration));
+                }else if(getSimpleDuration(melody.duration) == lastDuration){
+                    //Just use .
+                }else if(lastDuration != getSimpleDuration(melody.duration) && getSimpleDuration(melody.duration) == getSimpleDuration(nextElement.duration)){
+                    // bridged with . ? X
+                    lastDuration = getSimpleDuration(melody.duration);
+                    out.add("L" + getSimpleLength(melody.duration));
+                }
             }
             // 도트 필요 여부
             boolean reqireDot = getSimpleDuration(melody.duration) == lastDuration && melody.duration != lastDuration;
@@ -274,9 +283,6 @@ public class MmlScan extends MmlSplit{
                 if(append == null){
                     Log.e("추가할게 없음.");
                     continue;
-                }
-                if(append.startsWith("L") && getSimpleLength(lastDuration) != null){
-                    // lastDuration = times.get(4)*6;
                 }
                 out.add(append);
                 i += 1;
@@ -296,7 +302,7 @@ public class MmlScan extends MmlSplit{
                 lastOctave = melody.octave;
             }
             //Velocity
-            melody.power = Math.max(0,5+Math.min(10,Math.round(divide(melody.power,average)*10)));
+            melody.power = Math.max(0,3+Math.min(12,Math.round(divide(melody.power,average)*12)));
             if(lastVelo != melody.power){
                 Log.d("Velocity: " + melody.power);
                 if(!reduceV || Math.abs(lastVelo - melody.power) >= 4){
@@ -308,9 +314,6 @@ public class MmlScan extends MmlSplit{
             if(append == null){
                 Log.e("추가할게 없음.");
                 continue;
-            }
-            if(append.startsWith("L")){
-                // lastDuration = times.get(4)*6;
             }
             if(melody.isBridge){
                 append = "&" + append;
