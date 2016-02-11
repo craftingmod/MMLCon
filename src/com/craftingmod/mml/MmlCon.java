@@ -88,12 +88,13 @@ public class MmlCon  {
             }
         }
     }
-    public void exportAll(File dir, String name){
+    public int exportAll(File dir, String name){
         ArrayList<String> out = new ArrayList<>();
         ArrayList<String> results = new ArrayList<>();
         ArrayList<Integer> sizes = new ArrayList<>();
         for (MidiTrack track : tracks) {
             MmlScan scanner = new MmlScan(track);
+            scanner.upOctave = this.upOctave;
             scanner.putTempo(tempoes);
             scanner.scanTracks();
             ArrayList<String> outs = scanner.getResults();
@@ -126,14 +127,14 @@ public class MmlCon  {
         if(results.size() >= 1){
             out.add("<melody>");
             out.add("<![CDATA[");
-            out.add("MML@" + results.get(0));
+            out.add(results.get(0));
             out.add("]]>");
             out.add("</melody>");
         }
         for (int i=1;i<results.size();i+=1) {
             out.add("<chord index=\"" + i + "\">");
             out.add("<![CDATA[");
-            out.add("MML@" + results.get(i));
+            out.add(results.get(i));
             out.add("]]>");
             out.add("</chord>");
         }
@@ -145,6 +146,11 @@ public class MmlCon  {
         }catch (Exception e){
             e.printStackTrace();
         }
+        int totalSize = 0;
+        for(String say : results){
+            totalSize += say.length();
+        }
+        return totalSize;
     }
     public void scan(int channel){
         //MmlScan scanner = new MmlScan(tracks.get(channel));

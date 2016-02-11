@@ -135,8 +135,12 @@ public class MmlScan extends MmlSplit{
                 Log.d("Start At " + melody.eventTime);
                 Log.d("Original duration: " + melody.duration + " break: " + afterDu);
                 if(Math.floor(divide(totalDu,30)) != divide(totalDu,30)){
-                    Log.d("Tick: " + melody.note.getTick());
-                    Log.d("NextTick: " + nextMelody.note.getTick());
+                    try {
+                        Log.d("Tick: " + melody.note.getTick());
+                        Log.d("NextTick: " + nextMelody.note.getTick());
+                    }catch (Exception e){
+                        e.printStackTrace();
+                    }
                     if(afterDu > times.get(8)){
                         melody.duration = (long)Math.ceil(divide(melody.duration,times.get(8)))*times.get(8);
                     }else{
