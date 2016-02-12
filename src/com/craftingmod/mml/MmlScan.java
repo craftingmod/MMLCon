@@ -31,6 +31,8 @@ public class MmlScan extends MmlSplit{
 
     public boolean upOctave = false;
     public boolean reduceV = true;
+    public boolean useNormalV = false;
+    public boolean sustain = true;
     public MmlScan(MidiTrack tr){
         super(tr);
     }
@@ -38,6 +40,7 @@ public class MmlScan extends MmlSplit{
         out = Lists.newArrayList();
         size = Lists.newArrayList();
         split();
+
         for (HashMultimap<Long, Melody> channel : channels) {
             String scan = scan(channel);
             out.add(scan);
@@ -139,7 +142,6 @@ public class MmlScan extends MmlSplit{
                         Log.d("Tick: " + melody.note.getTick());
                         Log.d("NextTick: " + nextMelody.note.getTick());
                     }catch (Exception e){
-                        e.printStackTrace();
                     }
                     if(afterDu > times.get(8)){
                         melody.duration = (long)Math.ceil(divide(melody.duration,times.get(8)))*times.get(8);
@@ -205,24 +207,54 @@ public class MmlScan extends MmlSplit{
          */
         for(int i=0;i<aligned.size()-1;i+=1){
             SimpleMelody melody = aligned.get(i);
-            SimpleMelody nextMelody = aligned.get(i+1);
+            SimpleMelody nextMelody = null;
+            SimpleMelody nextTempo = null;
+            int k=i+1;
+            int mk = -1;
+            int tk = -1;
+            if(melody.isTempo){
+                continue;
+            }
+            while(k < aligned.size()){
+                if(!aligned.get(k).isTempo){
+                    if(nextMelody == null){
+                        nextMelody = aligned.get(k);
+                        mk = k;
+                    }
+                }else{
+                    if(nextTempo == null){
+                        nextTempo = aligned.get(k);
+                        tk = k;
+                    }
+                }
+                if(nextMelody != null && nextTempo != null) break;
+                k += 1;
+            }
+            if(nextMelody == null){
+                break;
+            }
             long sigma = melody.duration+nextMelody.duration;
             if(!simpleDivide(melody.duration,10) && !simpleDivide(nextMelody.duration,10) &&
                     simpleDivide(sigma,30)){
-                long rDuration = reduceDuration(melody.duration,nextMelody.duration,times.get(32));
+                long rDuration = reduceDuration(melody.duration,nextMelody.duration,times.get(16));
                 long aDuration = sigma-rDuration;
                 if(rDuration - melody.duration > melody.duration/10){
                     rDuration = Math.round(melody.duration/timeMin)*timeMin;
                     aDuration = sigma-rDuration;
                 }
+                Log.d("Reducer : " + melody.duration + " / " + nextMelody.duration);
                 melody.duration = rDuration;
                 nextMelody.eventTime = melody.eventTime + rDuration;
                 nextMelody.duration = aDuration;
+                if(nextTempo != null && nextTempo.eventTime == nextMelody.eventTime){
+                    Log.d("Reducer-Tempo: " + nextTempo.eventTime);
+                    nextTempo.eventTime = nextMelody.eventTime;
+                    aligned.set(tk,nextTempo);
+                }
                 aligned.set(i,melody);
-                aligned.set(i+1,nextMelody);
-                Log.d("Reducer : " + melody.duration + " / " + nextMelody.duration);
+                aligned.set(mk,nextMelody);
                 Log.d("Reducer : " + rDuration + " / " + aDuration);
-                i += 1;
+                i = mk;
             }
         }
 
@@ -232,6 +264,7 @@ public class MmlScan extends MmlSplit{
          */
 
         for (SimpleMelody melody : aligned) {
+            Log.d("Duration",""+melody.duration);
             if(checkTime != melody.eventTime){
                 Log.e("Time Exception: Think " + checkTime + " But " + melody.eventTime + "!");
                 return null;
@@ -337,7 +370,11 @@ public class MmlScan extends MmlSplit{
                 lastOctave = melody.octave;
             }
             //Velocity
-            melody.power = Math.max(0,3+Math.min(12,Math.round(divide(melody.power,average)*12)));
+            if(!useNormalV){
+                melody.power = Math.max(0,7+Math.min(8,Math.round(divide(melody.power,average)*8)));
+            }else{
+                melody.power = Math.max(0,5+Math.min(10,Math.round(divide(melody.power,160)*10)));
+            }
             if(lastVelo != melody.power){
                 Log.d("Velocity: " + melody.power);
                 if(!reduceV || Math.abs(lastVelo - melody.power) >= 4){

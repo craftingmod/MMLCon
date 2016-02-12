@@ -71,13 +71,16 @@ public class MmlCon  {
                     int bpm =  Math.round(((Tempo) event).getBpm());
                     // lastBPM/20 -> Ex: 120 -> 6 / 180 -> 9 / 60 -> 3
                     if(Math.abs(lastBPM - bpm) < (lastBPM/15) && lastBPM != -1){
-                        Log.d("Tempo " + bpm + " removed due to similar tempo.");
+                        Log.d("Tempo " + bpm + " At " + event.getTick() + " removed due to similar tempo.");
                         events.remove(i);
                         i -= 1;
                     }else{
                         Tempo lpT = (Tempo) event;
+                        if(Math.floor(lpT.getTick()/120)*120 != lpT.getTick()){
+                            lpT = new Tempo((long)Math.round(lpT.getTick()/240)*240,-1,lpT.getMpqn());
+                        }
                         tempoes.add(lpT);
-                        Log.d("Tempo: " + bpm);
+                        Log.d("Tempo: " + bpm + " At " + lpT.getTick());
                         lastBPM = bpm;
                         tempoExists = true;
                     }

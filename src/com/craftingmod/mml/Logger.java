@@ -16,6 +16,7 @@ import java.util.Date;
  * Created by superuser on 16/2/5.
  */
 public class Logger {
+    private final boolean debug = false;
     private Class cls;
     private Gson g;
     private static ColoredPrinter cp;
@@ -49,6 +50,9 @@ public class Logger {
         d(cls.getSimpleName(),msg);
     }
     public void d(String tag,String msg){
+        if(!debug){
+            return;
+        }
         cp.setForegroundColor(FColor.CYAN);
         cp.print(getCurrentTimeStamp());
         cp.print(" ");
@@ -81,6 +85,9 @@ public class Logger {
         cp.clear();
     }
     public void line(){
+        if(!debug){
+            return;
+        }
         cp.clear();
         cp.setBackgroundColor(BColor.GREEN);
         cp.println("");

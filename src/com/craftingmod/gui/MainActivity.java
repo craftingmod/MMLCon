@@ -10,6 +10,8 @@ import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuBar;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
@@ -141,7 +143,7 @@ public class MainActivity extends Application {
             event.consume();
         });
         stage.setScene(scene);
-        stage.initStyle(StageStyle.DECORATED);
+        //stage.initStyle(StageStyle.DECORATED);
 
         stage.show();
     }
