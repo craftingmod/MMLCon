@@ -319,9 +319,11 @@ public class MmlScan extends MmlSplit{
                 Log.e("추가할게 없음.");
                 continue;
             }
+            /*
             if(melody.isBridge){
                 append = "&" + append;
             }
+            */
             out.add(append);
 
             i += 1;

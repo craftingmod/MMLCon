@@ -88,8 +88,41 @@ public class MmlCon  {
             }
         }
     }
-    public int exportAll(File dir, String name){
+    private ArrayList<String> exportMS2(ArrayList<String> results){
         ArrayList<String> out = new ArrayList<>();
+        out.add("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
+        out.add("<ms2>");
+        if(results.size() >= 1){
+            out.add("<melody>");
+            out.add("<![CDATA[");
+            out.add(results.get(0));
+            out.add("]]>");
+            out.add("</melody>");
+        }
+        for (int i=1;i<results.size();i+=1) {
+            out.add("<chord index=\"" + i + "\">");
+            out.add("<![CDATA[");
+            out.add(results.get(i));
+            out.add("]]>");
+            out.add("</chord>");
+        }
+        out.add("</ms2>");
+        return out;
+    }
+    private ArrayList<String> exportMML(ArrayList<String> results){
+        ArrayList<String> out = new ArrayList<>();
+        out.add("[Settings]");
+        out.add("Encoding=UTF-8");
+        out.add("Title=");
+        out.add("Source=");
+        out.add("Memo=");
+        for (int i=0;i<results.size();i+=1) {
+            out.add("[Channel" + (i+1) + "]");
+            out.add(results.get(i).toLowerCase());
+        }
+        return out;
+    }
+    public int exportAll(File dir, String name){
         ArrayList<String> results = new ArrayList<>();
         ArrayList<Integer> sizes = new ArrayList<>();
         for (MidiTrack track : tracks) {
@@ -122,25 +155,10 @@ public class MmlCon  {
         for(int size : sizes){
             Log.i("Size: " + size);
         }
-        out.add("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
-        out.add("<ms2>");
-        if(results.size() >= 1){
-            out.add("<melody>");
-            out.add("<![CDATA[");
-            out.add(results.get(0));
-            out.add("]]>");
-            out.add("</melody>");
-        }
-        for (int i=1;i<results.size();i+=1) {
-            out.add("<chord index=\"" + i + "\">");
-            out.add("<![CDATA[");
-            out.add(results.get(i));
-            out.add("]]>");
-            out.add("</chord>");
-        }
-        out.add("</ms2>");
+        final String extension = "mml";
+        ArrayList<String> out = exportMML(results);
         try{
-            Path expFile = Paths.get(dir.getCanonicalPath() + "/" + name);
+            Path expFile = Paths.get(dir.getCanonicalPath() + "/" + name + "." + extension);
             Files.deleteIfExists(expFile);
             Files.write(expFile,out,StandardCharsets.UTF_8);
         }catch (Exception e){

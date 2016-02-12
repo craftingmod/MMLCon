@@ -41,6 +41,7 @@ public class MainActivity extends Application {
         stage.setTitle("midi");
         stage.setResizable(false);
         stage.setAlwaysOnTop(true);
+        stage.setIconified(false);
         Scene scene = new Scene(root, 200, 238);
         final MainController controller = loader.getController();
         upoctave = pref.getBoolean("upoctave",false);
@@ -115,7 +116,7 @@ public class MainActivity extends Application {
                             save = midi.getParentFile();
                         }
                         if(save.canWrite()){
-                            int size = con.exportAll(save,midi.getName().replaceFirst("[.][^.]+$", "") + ".ms2mml");
+                            int size = con.exportAll(save,midi.getName().replaceFirst("[.][^.]+$", ""));
                             controller.check.setText(size + " 글자");
                         }
                     }catch (IOException e){

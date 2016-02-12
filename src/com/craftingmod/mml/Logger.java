@@ -46,11 +46,14 @@ public class Logger {
         i(ob + "");
     }
     public void d(String msg){
+        d(cls.getSimpleName(),msg);
+    }
+    public void d(String tag,String msg){
         cp.setForegroundColor(FColor.CYAN);
         cp.print(getCurrentTimeStamp());
         cp.print(" ");
         cp.setForegroundColor(FColor.YELLOW);
-        cp.print(cls.getSimpleName());
+        cp.print(tag);
         cp.clear();
         cp.print(" : ");
         cp.println(msg);
