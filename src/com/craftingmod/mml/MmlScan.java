@@ -288,8 +288,14 @@ public class MmlScan extends MmlSplit{
             }
         }
         // 1.04 : 35%
-        int average = (int) Math.round(sigmaV/sigmaN + Math.sqrt(sigmaV2/sigmaN - Math.pow(sigmaV/sigmaN,2))*1.04);
-        Log.d("상위 85%: " + average);
+        int average = 0;
+        if(sigmaN > 0){
+            average = (int) Math.round(sigmaV/sigmaN + Math.sqrt(sigmaV2/sigmaN - Math.pow(sigmaV/sigmaN,2))*1.04);
+            Log.d("상위 85%: " + average);
+        }else{
+            useNormalV = true;
+        }
+
 
         /* ------------------------------------------ */
 
