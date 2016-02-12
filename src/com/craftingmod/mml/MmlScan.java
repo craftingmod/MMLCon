@@ -241,7 +241,9 @@ public class MmlScan extends MmlSplit{
              * Tempo
              */
             if(melody.isTempo){
-                out.add("T" + (int)Math.floor(melody.bpm));
+                // 32 ~ 255 가 한계
+                int reduceTempo = Math.round(Math.max(32,Math.min(255,melody.bpm)));
+                out.add("T" + reduceTempo);
                 continue;
             }
 
@@ -283,7 +285,7 @@ public class MmlScan extends MmlSplit{
 
             //Breaks
             if(melody.isBreak){
-                String append = getLoopDuration(melody.duration,"R",lastDuration,true,null);
+                String append = this.getBreakDuration(melody.duration,lastDuration);
                 if(append == null){
                     Log.e("추가할게 없음.");
                     continue;
@@ -314,7 +316,7 @@ public class MmlScan extends MmlSplit{
                 }
                 lastVelo = melody.power;
             }
-            String append = getLoopDuration(melody.duration,melody.getNativeNote(),lastDuration,false,out);
+            String append = getMelodyDuration(melody.duration,melody.getNativeNote(),lastDuration);
             if(append == null){
                 Log.e("추가할게 없음.");
                 continue;
@@ -324,6 +326,7 @@ public class MmlScan extends MmlSplit{
                 append = "&" + append;
             }
             */
+            Log.d("Append",append);
             out.add(append);
 
             i += 1;
@@ -410,19 +413,26 @@ public class MmlScan extends MmlSplit{
         }
         return du;
     }
-    private String getLoopDuration(long du,String note,long defaultD,boolean useB,ArrayList<String> ino){
+    private String getMelodyDuration(long duration,String note,long defaultDuration){
+        return getLoopDuration(duration,note,defaultDuration,false);
+    }
+    private String getBreakDuration(long duration,long defaultDuration){
+        return getLoopDuration(duration,"R",defaultDuration,true);
+    }
+    private String getLoopDuration(long du,String note,long defaultD,boolean useB){
         String out = getSingleLength(du);
+        ArrayList<String> in = new ArrayList<>();
         if(out == null){
+            // 간단히 표시가 안될 때
             // require loop
-            ArrayList<String> in = new ArrayList<>();
-            long leftover = du;
-            int add4 = 0;
+            long leftover = du; // 루프용 수
             String[] sts = new String[]{
                     "1.","1","2.","2","4.","4","8.","8","16.","16","32.","32"
             };
             double[] dus = new double[]{
                     6,4,3,2,1.5,1,0.75,0.5,0.375,0.25,0.1875,0.125
             };
+            // 제거용 길이들
             while(getSingleLength(leftover) == null){
                 String addS = null;
                 for(int i=0;i<dus.length;i+=1){
@@ -433,34 +443,32 @@ public class MmlScan extends MmlSplit{
                     }
                 }
                 if(addS == null){
-                    Log.e("getLoopDuration FALLED.");
+                    Log.e("getLoopDuration FALLED. " + du);
                     return null;
                 }
                 in.add(note + addS);
             }
             in.add(note + getSingleLength(leftover));
-            String result = "";
-            String result_lp;
-            String replace_lp;
-            if(useB) {
-                replace_lp = "";
-            }else {
-                replace_lp = "&";
-            }
-            result_lp = Joiner.on(replace_lp).join(in);
-            if(getSingleLength(defaultD) != null){
-                result_lp = result_lp.replace(getSingleLength(defaultD),"");
-            }
-            result += result_lp;
-
-            return result;
         }else{
-            // don't require loop
-            out = note + out;
-            if(getSingleLength(defaultD) != null){
-                out = out.replace(getSingleLength(defaultD),"");
-            }
-            return out;
+            in.add(note + out);
         }
+        String bridgeS = (useB) ? "" : "&";
+        String defaultS = getSingleLength(defaultD);
+        Log.d("getLoopDuration",du + " / " + Joiner.on(bridgeS).join(in));
+        if(defaultS != null){
+            defaultS = note + defaultS;
+            for(int i=0;i<in.size();i+=1){
+                String part = in.get(i);
+                if(part.equalsIgnoreCase(defaultS)){
+                    // L1. 하고 C1. -> L1. / C
+                    in.set(i,note);
+                }else{
+                    if(!defaultS.endsWith(".") && part.equalsIgnoreCase(defaultS + ".")){
+                        in.set(i,note+".");
+                    }
+                }
+            }
+        }
+        return Joiner.on(bridgeS).join(in);
     }
 }
