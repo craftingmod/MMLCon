@@ -198,10 +198,39 @@ public class MmlScan extends MmlSplit{
         long sigmaN = 0L; // 횟수
         long sigmaV = 0L; // E(X)
         long sigmaV2 = 0L; // E(X^2)
+
+        /**
+         * Module: Reducer
+         * to fix 761/399 like exception
+         */
+        for(int i=0;i<aligned.size()-1;i+=1){
+            SimpleMelody melody = aligned.get(i);
+            SimpleMelody nextMelody = aligned.get(i+1);
+            long sigma = melody.duration+nextMelody.duration;
+            if(!simpleDivide(melody.duration,10) && !simpleDivide(nextMelody.duration,10) &&
+                    simpleDivide(sigma,30)){
+                long rDuration = reduceDuration(melody.duration,nextMelody.duration,times.get(32));
+                long aDuration = sigma-rDuration;
+                if(rDuration - melody.duration > melody.duration/10){
+                    rDuration = Math.round(melody.duration/timeMin)*timeMin;
+                    aDuration = sigma-rDuration;
+                }
+                melody.duration = rDuration;
+                nextMelody.eventTime = melody.eventTime + rDuration;
+                nextMelody.duration = aDuration;
+                aligned.set(i,melody);
+                aligned.set(i+1,nextMelody);
+                Log.d("Reducer : " + melody.duration + " / " + nextMelody.duration);
+                Log.d("Reducer : " + rDuration + " / " + aDuration);
+                i += 1;
+            }
+        }
+
         /**
          * Check wrong timing
          * and get V(X)
          */
+
         for (SimpleMelody melody : aligned) {
             if(checkTime != melody.eventTime){
                 Log.e("Time Exception: Think " + checkTime + " But " + melody.eventTime + "!");
