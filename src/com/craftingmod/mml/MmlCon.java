@@ -158,22 +158,23 @@ public class MmlCon  {
         for(int size : sizes){
             Log.i("Size: " + size);
         }
-        final String extension = "mml";
-        ArrayList<String> out = exportMML(results);
-        try{
-            Path expFile = Paths.get(dir.getCanonicalPath() + "/" + name + "." + extension);
-            Files.deleteIfExists(expFile);
-            Files.write(expFile,out,StandardCharsets.UTF_8);
-        }catch (Exception e){
-            e.printStackTrace();
-        }
+        ArrayList<String> mml = exportMML(results);
+        ArrayList<String> ms2 = exportMS2(results);
+        save(mml,dir,name + ".mml");
+        save(ms2,dir,name + ".ms2mml");
         int totalSize = 0;
         for(String say : results){
             totalSize += say.length();
         }
         return totalSize;
     }
-    public void scan(int channel){
-        //MmlScan scanner = new MmlScan(tracks.get(channel));
+    private void save(ArrayList<String> saves,File dir,String fullFname){
+        try{
+            Path expFile = Paths.get(dir.getCanonicalPath() + "/" + fullFname);
+            Files.deleteIfExists(expFile);
+            Files.write(expFile,saves,StandardCharsets.UTF_8);
+        }catch (Exception e){
+            e.printStackTrace();
+        }
     }
 }
